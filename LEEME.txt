@@ -1,0 +1,105 @@
+╔══════════════════════════════════════════════════════════╗
+║     MALAIFAMA — App de Gestión Interna                  ║
+║     Instrucciones de uso y personalización              ║
+╚══════════════════════════════════════════════════════════╝
+
+═══ CÓMO ABRIR ═══════════════════════════════════════════
+
+Abre el archivo index.html directamente en tu navegador.
+No necesita servidor ni internet (excepto para las fuentes de Google).
+
+Para mejor experiencia puedes usar una extensión como
+"Live Server" en VS Code, o simplemente hacer doble clic en index.html.
+
+
+═══ IMÁGENES — DÓNDE COLOCARLAS ═══════════════════════════
+
+Copia tus fotos a la carpeta: assets/images/
+Usa exactamente estos nombres de archivo:
+
+  logo.png              → Logo circular de Malaifama
+  band-rails-wide.jpg   → Foto grupal horizontal (vías del tren, noche)
+                          Usada en: hero del dashboard, galería
+  band-group-night.jpg  → Foto grupal wide angle (noche, posando)
+                          Usada en: página Nosotros
+  concert-live-red.jpg  → Concierto con luces rojas/moradas
+                          Usada en: galería
+  concert-bw-indoor.jpg → Concierto B&W (sala interior natural)
+                          Usada en: galería
+  vocalist-stage.jpg    → Valentina cantando (primer plano, luces cálidas)
+                          Usada en: tarjeta destacada en Dashboard
+  rehearsal-bw.jpg      → Ensayo B&W desde arriba
+                          Usada en: galería y página Nosotros
+
+Si los archivos no están presentes, la app funciona igual
+con fondos CSS de degradado. No hay errores ni pantallas rotas.
+
+
+═══ CAMBIAR TEXTO Y DATOS ════════════════════════════════
+
+Todo el contenido editable está en: js/data.js
+
+  ▸ MEMBERS → Nombres, roles e iniciales de los integrantes
+  ▸ EVENTS  → Eventos precargados (ensayos, conciertos, etc.)
+  ▸ SONGS   → Canciones con letra, acordes, tonalidad, estado
+  ▸ MEDIA   → Fotos, videos, audios y documentos con links de Google Drive
+
+
+═══ CAMBIAR LINKS DE GOOGLE DRIVE ══════════════════════
+
+En js/data.js busca los campos "driveUrl" y "url" dentro de
+MEDIA y SONGS, y reemplaza los textos "EJEMPLO_*" con los
+links reales de tus archivos en Google Drive.
+
+Ejemplo:
+  driveUrl: 'https://drive.google.com/drive/folders/TU_ID_REAL'
+
+
+═══ EVENTOS — GESTIÓN ═══════════════════════════════════
+
+Los eventos se pueden agregar, editar y eliminar directamente
+desde la aplicación usando los botones de la interfaz.
+Los cambios se guardan en el navegador (localStorage).
+
+Para resetear todos los eventos y volver a los de ejemplo,
+borra el ítem "malaifama_events" en el localStorage del navegador
+(F12 → Application → Local Storage → Clear).
+
+
+═══ PUBLICAR EN INTERNET ════════════════════════════════
+
+La app es 100% estática. Puedes subirla a:
+
+  • GitHub Pages: sube la carpeta al repositorio y activa Pages
+  • Netlify: arrastra la carpeta al panel de Netlify
+  • Cloudflare Pages: conecta el repositorio de GitHub
+
+No necesitas configurar nada más. Sube toda la carpeta
+"malaifama/" tal como está.
+
+
+═══ ESTRUCTURA DE ARCHIVOS ══════════════════════════════
+
+  malaifama/
+  ├── index.html          ← Punto de entrada
+  ├── LEEME.txt           ← Este archivo
+  ├── css/
+  │   └── styles.css      ← Estilos visuales
+  ├── js/
+  │   ├── app.js          ← Lógica de la app
+  │   └── data.js         ← Canciones, eventos, integrantes, media
+  └── assets/
+      └── images/         ← Aquí van tus fotos
+
+
+═══ SECCIONES DE LA APP ════════════════════════════════
+
+  ⚡ Dashboard   → Resumen, próximos eventos, acceso rápido
+  📅 Calendario  → Vista mensual/semanal/diaria, agregar eventos
+  🎵 Canciones   → Biblioteca con letra, acordes, estado, links
+  🗂 Multimedia  → Fotos, videos, audios, documentos (Google Drive)
+  🔍 Búsqueda    → Búsqueda global en tiempo real
+  🎸 Nosotros    → Integrantes y galería de la banda
+
+
+Malaifama © 2024 — Uso interno de la banda

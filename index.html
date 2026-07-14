@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Malaifama — Gestión interna de banda ska-punk">
+  <title>Malaifama — Gestión Interna</title>
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo" style="cursor:pointer">
+      <img src="assets/images/logo.png" alt="Malaifama logo"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+      <div class="logo-fallback" style="display:none">MF</div>
+      <div class="sidebar-brand">
+        <strong>MALAIFAMA</strong>
+        <span>Ska · Punk</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+
+      <div class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">⚡</span>
+        Dashboard
+      </div>
+      <div class="nav-item" data-page="calendar">
+        <span class="nav-icon">📅</span>
+        Calendario
+      </div>
+
+      <div class="nav-section-label" style="margin-top:8px">Contenido</div>
+
+      <div class="nav-item" data-page="songs">
+        <span class="nav-icon">🎵</span>
+        Canciones
+      </div>
+      <div class="nav-item" data-page="media">
+        <span class="nav-icon">🗂️</span>
+        Multimedia
+      </div>
+      <div class="nav-item" data-page="search">
+        <span class="nav-icon">🔍</span>
+        Búsqueda
+      </div>
+
+      <div class="nav-section-label" style="margin-top:8px">Banda</div>
+
+      <div class="nav-item" data-page="about">
+        <span class="nav-icon">🎸</span>
+        Nosotros
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      Malaifama © 2024<br>
+      <span style="color:var(--cyan)">Uso interno</span>
+    </div>
+  </aside>
+
+  <!-- Backdrop móvil -->
+  <div class="sidebar-backdrop"></div>
+
+  <!-- ══ MAIN CONTENT ═════════════════════════════ -->
+  <div class="main-content">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="menu-toggle" aria-label="Menú">☰</button>
+      <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="topbar-search-input" placeholder="Buscar en todo...">
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" id="btn-settings" title="Ajustes de banda">⚙️</button>
+        <button class="btn btn-outline btn-sm" id="btn-export" title="Export / Import datos">💾</button>
+      </div>
+    </header>
+
+    <!-- ── DASHBOARD ──────────────────────────── -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-inner">
+
+        <!-- Hero -->
+        <div class="dash-hero">
+          <div class="dash-hero-bg"></div>
+          <div class="dash-hero-overlay"></div>
+          <div class="dash-hero-content">
+            <p class="dash-hero-tag">SKA · PUNK · COSTA RICA</p>
+            <h1>MALA<em>FAMA</em></h1>
+            <p>Panel interno de gestión para la banda. Ensayos, conciertos, canciones y archivos en un solo lugar.</p>
+            <div class="dash-hero-actions">
+              <button class="btn btn-primary" onclick="navigateTo('calendar')">📅 Ver calendario</button>
+              <button class="btn btn-outline" onclick="navigateTo('songs')">🎵 Canciones</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-strip">
+          <div class="card stat-card">
+            <div class="stat-icon cyan">🎵</div>
+            <div>
+              <div class="stat-value" id="stat-songs">—</div>
+              <div class="stat-label">Canciones activas</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon amber">📅</div>
+            <div>
+              <div class="stat-value" id="stat-events">—</div>
+              <div class="stat-label">Eventos próximos</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon red">🎸</div>
+            <div>
+              <div class="stat-value" id="stat-concerts">—</div>
+              <div class="stat-label">Conciertos agendados</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon purple">🎙️</div>
+            <div>
+              <div class="stat-value" id="stat-recordings">—</div>
+              <div class="stat-label">Grabaciones</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard grid -->
+        <div class="dash-grid">
+          <!-- Upcoming events -->
+          <div>
+            <div class="section-header" style="margin-bottom:16px">
+              <h2 style="font-size:20px">Próximos <span>eventos</span></h2>
+              <button class="btn btn-outline btn-sm" onclick="navigateTo('calendar')">Ver todos →</button>
+            </div>
+            <div id="upcoming-list" class="upcoming-list">
+              <p class="text-muted text-sm" style="padding:16px">Cargando...</p>
+            </div>
+          </div>
+
+          <!-- Quick links -->
+          <div>
+            <div class="card quick-panel">
+              <h3>Acceso rápido</h3>
+              <div class="quick-links">
+                <div class="quick-link" onclick="navigateTo('songs')">
+                  <span class="ql-icon">🎵</span> Biblioteca de canciones
+                </div>
+                <div class="quick-link" onclick="navigateTo('media')">
+                  <span class="ql-icon">📷</span> Fotos de la banda
+                </div>
+                <div class="quick-link" onclick="navigateTo('media'); setTimeout(()=>{App.mediaTab='audio';renderMedia();},100)">
+                  <span class="ql-icon">🎶</span> Audios y maquetas
+                </div>
+                <div class="quick-link" onclick="navigateTo('media'); setTimeout(()=>{App.mediaTab='docs';renderMedia();},100)">
+                  <span class="ql-icon">📄</span> Contratos y documentos
+                </div>
+                <div class="quick-link" onclick="openAddEventModal('')">
+                  <span class="ql-icon">➕</span> Crear nuevo evento
+                </div>
+                <div class="quick-link" onclick="navigateTo('search')">
+                  <span class="ql-icon">🔍</span> Búsqueda global
+                </div>
+              </div>
+
+              <hr class="divider">
+
+              <div style="display:flex; flex-direction:column; gap:6px">
+                <p class="text-xs text-muted" style="letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px">Leyenda de eventos</p>
+                <div class="cal-legend">
+                  <div class="cal-legend-item"><div class="legend-dot" style="background:#e63946"></div> Concierto</div>
+                  <div class="cal-legend-item"><div class="legend-dot" style="background:#f4a261"></div> Ensayo</div>
+                  <div class="cal-legend-item"><div class="legend-dot" style="background:#9b59b6"></div> Grabación</div>
+                  <div class="cal-legend-item"><div class="legend-dot" style="background:#00e5ff"></div> Reunión</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vocalist feature card -->
+            <div class="card" style="margin-top:16px; overflow:hidden; position:relative; min-height:200px">
+              <img src="assets/images/vocalist-stage.jpg" alt="Vocalista en escena"
+                   style="width:100%; height:200px; object-fit:cover; object-position:center top"
+                   onerror="this.style.display='none'">
+              <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.9), rgba(0,0,0,.1)); padding:16px; display:flex; flex-direction:column; justify-content:flex-end">
+                <span class="tag tag-cyan" style="width:fit-content; margin-bottom:6px">Voz principal</span>
+                <h4 style="font-size:16px; color:#fff">Valentina Rojas</h4>
+                <p style="font-size:12px; color:var(--text-muted)">La voz de Malaifama</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── CALENDARIO ─────────────────────────── -->
+    <section class="page" id="page-calendar">
+      <div class="page-inner">
+        <div class="section-header">
+          <h2>Calen<span>dario</span></h2>
+          <button class="btn btn-primary" id="btn-add-event">+ Nuevo evento</button>
+        </div>
+
+        <div class="cal-toolbar">
+          <div class="cal-nav">
+            <button class="btn btn-outline btn-icon" id="cal-prev" title="Anterior">‹</button>
+            <h3 id="cal-title">—</h3>
+            <button class="btn btn-outline btn-icon" id="cal-next" title="Siguiente">›</button>
+            <button class="btn btn-outline btn-sm" id="cal-today">Hoy</button>
+          </div>
+          <div class="cal-view-tabs">
+            <div class="cal-tab active" data-view="month">Mes</div>
+            <div class="cal-tab" data-view="week">Semana</div>
+            <div class="cal-tab" data-view="day">Día</div>
+          </div>
+        </div>
+
+        <div id="cal-view-container"></div>
+
+        <div class="cal-legend" style="margin-top:20px">
+          <div class="cal-legend-item"><div class="legend-dot" style="background:#e63946"></div> Concierto</div>
+          <div class="cal-legend-item"><div class="legend-dot" style="background:#f4a261"></div> Ensayo</div>
+          <div class="cal-legend-item"><div class="legend-dot" style="background:#9b59b6"></div> Grabación</div>
+          <div class="cal-legend-item"><div class="legend-dot" style="background:#00e5ff"></div> Reunión</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── CANCIONES ──────────────────────────── -->
+    <section class="page" id="page-songs">
+      <div class="page-inner">
+        <div class="section-header">
+          <h2>Biblio<span>teca</span></h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-song">+ Nueva canción</button>
+        </div>
+
+        <div class="songs-toolbar">
+          <div class="song-filters">
+            <button class="filter-chip active" data-filter="all">Todas <span class="fc-count"></span></button>
+            <button class="filter-chip" data-filter="activa">Activas <span class="fc-count"></span></button>
+            <button class="filter-chip" data-filter="en-progreso">En progreso <span class="fc-count"></span></button>
+            <button class="filter-chip" data-filter="nueva">Nuevas <span class="fc-count"></span></button>
+            <button class="filter-chip" data-filter="descontinuada">Archivadas <span class="fc-count"></span></button>
+          </div>
+          <input type="text" id="song-search" class="input" placeholder="🔍 Buscar canción, tonalidad, tag..." style="max-width:260px">
+        </div>
+
+        <div class="songs-grid" id="songs-grid">
+          <p class="text-muted text-sm">Cargando...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MULTIMEDIA ─────────────────────────── -->
+    <section class="page" id="page-media">
+      <div class="page-inner">
+        <div class="section-header">
+          <h2>Multi<span>media</span></h2>
+          <p class="text-muted text-sm">Todos los archivos viven en Google Drive — aquí los organizas y accedes.</p>
+        </div>
+
+        <div class="media-tabs">
+          <div class="media-tab active" data-tab="photos">📷 Fotos</div>
+          <div class="media-tab" data-tab="videos">🎬 Videos</div>
+          <div class="media-tab" data-tab="audio">🎵 Audio</div>
+          <div class="media-tab" data-tab="docs">📄 Documentos</div>
+        </div>
+
+        <div id="media-content">
+          <p class="text-muted text-sm">Cargando...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── BÚSQUEDA ───────────────────────────── -->
+    <section class="page" id="page-search">
+      <div class="page-inner">
+        <div class="section-header">
+          <h2>Bús<span>queda</span></h2>
+        </div>
+        <div class="search-page-bar">
+          <input type="text" id="search-input" class="input" placeholder="Buscar canciones, eventos, archivos..." autofocus>
+          <button class="btn btn-primary" onclick="runSearch()">Buscar</button>
+        </div>
+        <div id="search-results">
+          <div class="search-empty">
+            <div class="empty-icon">🔍</div>
+            <p>Escribe para buscar canciones, eventos o archivos.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── NOSOTROS ───────────────────────────── -->
+    <section class="page" id="page-about">
+      <div class="page-inner">
+
+        <div class="about-hero">
+          <img src="assets/images/band-group-night.jpg" alt="Malaifama — foto grupal"
+               onerror="this.style.background='linear-gradient(135deg,#0a0a1f,#1a0a2a)'; this.style.objectFit='none'">
+          <div class="about-hero-overlay">
+            <h2>Malaifama — La Banda</h2>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <h2>Los <span>integrantes</span></h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-member">+ Nuevo integrante</button>
+        </div>
+
+        <div class="members-grid" id="members-grid">
+          <p class="text-muted text-sm">Cargando...</p>
+        </div>
+
+        <div class="section-header" style="margin-top:32px">
+          <h2>Sobre <span>nosotros</span></h2>
+        </div>
+
+        <div class="card" style="padding:24px; margin-bottom:20px">
+          <p style="font-size:15px; line-height:1.8; color:var(--text-main); margin-bottom:16px">
+            <strong style="color:var(--cyan)">Malaifama</strong> es una banda de ska-punk originaria de Costa Rica,
+            nacida de la necesidad de gritar lo que el sistema calla. Nuestra música mezcla la energía cruda del punk
+            con los ritmos sincopados del ska, creando un sonido que invita a bailar y pensar al mismo tiempo.
+          </p>
+          <p style="font-size:15px; line-height:1.8; color:var(--text-main)">
+            Desde nuestros primeros ensayos en un garaje hasta los escenarios de festivales, Malaifama ha crecido
+            como una familia musical comprometida con el mensaje honesto, la comunidad y el arte sin filtros.
+          </p>
+        </div>
+
+        <!-- Band photos mosaic -->
+        <div class="section-header" style="margin-top:32px">
+          <h2>Galería <span>rápida</span></h2>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('media')">Ver todo →</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:32px">
+          <div class="gallery-item" style="aspect-ratio:16/9">
+            <img src="assets/images/band-rails-wide.jpg" alt="Malaifama — vías" loading="lazy"
+                 onerror="this.parentElement.style.background='#1a1a2e'">
+          </div>
+          <div class="gallery-item" style="aspect-ratio:16/9">
+            <img src="assets/images/concert-live-red.jpg" alt="Concierto" loading="lazy"
+                 onerror="this.parentElement.style.background='#1a0a0a'">
+          </div>
+          <div class="gallery-item" style="aspect-ratio:16/9">
+            <img src="assets/images/rehearsal-bw.jpg" alt="Ensayo B&W" loading="lazy"
+                 onerror="this.parentElement.style.background='#111'">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /main-content -->
+
+</div><!-- /app -->
+
+<!-- ══ MODALES ══════════════════════════════════════ -->
+
+<!-- Modal: Detalle de evento -->
+<div class="modal-overlay" id="modal-event-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Detalle de evento</h3>
+      <button class="modal-close btn-icon" title="Cerrar">✕</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Crear/editar evento -->
+<div class="modal-overlay" id="modal-add-event-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>+ Nuevo evento</h3>
+      <button class="modal-close btn-icon" title="Cerrar">✕</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de canción -->
+<div class="modal-overlay" id="modal-song-overlay">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-header">
+      <h3>Canción</h3>
+      <button class="modal-close btn-icon" title="Cerrar">✕</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Crear/editar canción -->
+<div class="modal-overlay" id="modal-song-edit-overlay">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header">
+      <h3>+ Nueva canción</h3>
+      <button class="modal-close btn-icon" title="Cerrar">✕</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Crear/editar multimedia -->
+<div class="modal-overlay" id="modal-media-edit-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>+ Nuevo archivo</h3>
+      <button class="modal-close btn-icon" title="Cerrar">x</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Crear/editar integrante -->
+<div class="modal-overlay" id="modal-member-edit-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>+ Nuevo integrante</h3>
+      <button class="modal-close btn-icon" title="Cerrar">x</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Ajustes de banda -->
+<div class="modal-overlay" id="modal-settings-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Ajustes de banda</h3>
+      <button class="modal-close btn-icon" title="Cerrar">x</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Export / Import -->
+<div class="modal-overlay" id="modal-export-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Export / Import datos</h3>
+      <button class="modal-close btn-icon" title="Cerrar">x</button>
+    </div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+  // Lazy-load hero background image
+  window.addEventListener('load', function() {
+    var heroBg = document.querySelector('.dash-hero-bg');
+    if (heroBg) {
+      var img = new Image();
+      img.onload = function() {
+        heroBg.style.backgroundImage = "url('assets/images/band-rails-wide.jpg')";
+        heroBg.style.opacity = '.45';
+      };
+      img.src = 'assets/images/band-rails-wide.jpg';
+    }
+  });
+</script>
+
+</body>
+</html>
