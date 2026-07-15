@@ -336,9 +336,9 @@ select.input { appearance: none; cursor: pointer; }
 }
 .dash-hero-bg {
   position: absolute; inset: 0;
-  background-image: url('../assets/images/band-rails-wide.jpg');
+  background-image: url('../assets/images/dashboard-bg-logo.jpg');
   background-size: cover;
-  background-position: center 50%;
+  background-position: center center;
   opacity: .45;
   transition: opacity .5s;
 }
