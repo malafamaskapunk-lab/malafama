@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════╗
-║     MALAIFAMA — App de Gestión Interna                  ║
+║     MALA FAMA — App de Gestión Interna                  ║
 ║     Instrucciones de uso y personalización              ║
 ╚══════════════════════════════════════════════════════════╝
 
@@ -17,7 +17,7 @@ Para mejor experiencia puedes usar una extensión como
 Copia tus fotos a la carpeta: assets/images/
 Usa exactamente estos nombres de archivo:
 
-  logo.png              → Logo circular de Malaifama
+  logo.png              → Logo circular de Mala Fama
   band-rails-wide.jpg   → Foto grupal horizontal (vías del tren, noche)
                           Usada en: hero del dashboard, galería
   band-group-night.jpg  → Foto grupal wide angle (noche, posando)
@@ -26,7 +26,7 @@ Usa exactamente estos nombres de archivo:
                           Usada en: galería
   concert-bw-indoor.jpg → Concierto B&W (sala interior natural)
                           Usada en: galería
-  vocalist-stage.jpg    → Valentina cantando (primer plano, luces cálidas)
+  vocalist-stage.jpg    → Marieth cantando (primer plano, luces cálidas)
                           Usada en: tarjeta destacada en Dashboard
   rehearsal-bw.jpg      → Ensayo B&W desde arriba
                           Usada en: galería y página Nosotros
@@ -102,4 +102,4 @@ No necesitas configurar nada más. Sube toda la carpeta
   🎸 Nosotros    → Integrantes y galería de la banda
 
 
-Malaifama © 2024 — Uso interno de la banda
+Mala Fama © 2024 — Uso interno de la banda

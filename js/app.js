@@ -117,7 +117,7 @@ function openExportModal() {
 // ── Ajustes de banda ──────────────────────────────────
 function applySettings() {
   const s = App.settings;
-  const name = s.bandName || 'Malaifama';
+  const name = s.bandName || 'Mala Fama';
   const tag  = s.tagline  || 'Ska · Punk';
   const el = document.querySelector('.sidebar-brand strong');
   if (el) el.textContent = name;
@@ -130,7 +130,7 @@ function openSettingsModal() {
   openModal('modal-settings', `
     <div class="event-form">
       <div class="form-group form-row single"><label class="form-label">Nombre de la banda</label>
-        <input class="input" id="st-name" value="${esc(s.bandName||'Malaifama')}"></div>
+        <input class="input" id="st-name" value="${esc(s.bandName||'Mala Fama')}"></div>
       <div class="form-group form-row single"><label class="form-label">Eslogan (sidebar)</label>
         <input class="input" id="st-tagline" value="${esc(s.tagline||'Ska · Punk · Costa Rica')}"></div>
       <div class="form-group form-row single"><label class="form-label">Género / País</label>
@@ -149,7 +149,7 @@ function openSettingsModal() {
 function saveSettings() {
   App.settings = {
     ...App.settings,
-    bandName:     document.getElementById('st-name')?.value.trim()    || 'Malaifama',
+    bandName:     document.getElementById('st-name')?.value.trim()    || 'Mala Fama',
     tagline:      document.getElementById('st-tagline')?.value.trim() || 'Ska · Punk',
     genre:        document.getElementById('st-genre')?.value.trim()   || '',
     bio:          document.getElementById('st-bio')?.value.trim()     || '',
@@ -742,8 +742,15 @@ function renderAbout() {
   var grid = document.getElementById('members-grid');
   if (!grid) return;
   grid.innerHTML = App.members.map(function(m) {
+    var avatarHtml = m.img
+      ? '<div class="member-avatar">' +
+          '<img src="' + esc(m.img) + '" alt="' + esc(m.name) + '" ' +
+            'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\'">' +
+          '<div class="member-avatar-init" style="display:none">' + esc(m.initials || (m.name||'').slice(0,2) || '??') + '</div>' +
+        '</div>'
+      : '<div class="member-avatar-init">' + esc(m.initials || (m.name||'').slice(0,2) || '??') + '</div>';
     return '<div class="card member-card" style="position:relative">' +
-      '<div class="member-avatar-init">' + esc(m.initials || (m.name||'').slice(0,2) || '??') + '</div>' +
+      avatarHtml +
       '<div class="member-name">' + esc(m.name) + '</div>' +
       '<div class="member-role">' + esc(m.role) + '</div>' +
       (m.bio ? '<p style="font-size:12px;color:var(--text-muted);margin-top:8px">' + esc(m.bio) + '</p>' : '') +

@@ -338,7 +338,7 @@ select.input { appearance: none; cursor: pointer; }
   position: absolute; inset: 0;
   background-image: url('../assets/images/band-rails-wide.jpg');
   background-size: cover;
-  background-position: center 35%;
+  background-position: center 55%;
   opacity: .45;
   transition: opacity .5s;
 }
@@ -822,13 +822,13 @@ select.input { appearance: none; cursor: pointer; }
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  height: 300px;
+  height: 340px;
   margin-bottom: 32px;
 }
 .about-hero img {
   width: 100%; height: 100%;
   object-fit: cover;
-  object-position: center 40%;
+  object-position: center 50%;
 }
 .about-hero-overlay {
   position: absolute; inset: 0;
@@ -915,6 +915,7 @@ select.input { appearance: none; cursor: pointer; }
   .page-inner { padding: 16px 16px 60px; }
   .dash-hero { height: 240px; }
   .dash-hero-content { padding: 0 20px; }
+  .about-hero { height: 240px; }
   .stats-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
   .songs-grid { grid-template-columns: 1fr; }
   .media-grid { grid-template-columns: 1fr; }
