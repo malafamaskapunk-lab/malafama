@@ -103,6 +103,7 @@ window.SONGS = [
     links: [
       { label: '🎧 Escuchar en Spotify', url: 'https://open.spotify.com/EJEMPLO_MALA_FAMA' },
     ],
+    audio: { source: 'none', driveUrl: '', upload: null },
   },
   {
     id: 2,
@@ -117,6 +118,7 @@ window.SONGS = [
     links: [
       { label: '🎧 Escuchar en Spotify', url: 'https://open.spotify.com/EJEMPLO_SENTIMIENTO' },
     ],
+    audio: { source: 'none', driveUrl: '', upload: null },
   },
 ];
 

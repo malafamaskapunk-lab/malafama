@@ -438,6 +438,44 @@ function calNext() {
 function calToday(){ App.calDate=new Date(); renderCalendar(); }
 
 // ══════════════════════════════════════════════════════
+// CANCIONES — AUDIO (Google Drive directo + Vercel Blob)
+// ══════════════════════════════════════════════════════
+const BLOB_UPLOAD_CLIENT_URL = 'https://esm.sh/@vercel/blob@2.6.1/client';
+
+function formatBytes(n) {
+  if (n === null || n === undefined || isNaN(n)) return '';
+  if (n < 1024) return n + ' B';
+  const units = ['KB', 'MB', 'GB'];
+  let i = -1;
+  do { n /= 1024; i++; } while (n >= 1024 && i < units.length - 1);
+  return n.toFixed(n < 10 ? 1 : 0) + ' ' + units[i];
+}
+
+// Convierte un link para compartir de Google Drive (archivo, no carpeta) en
+// una URL que un <audio> puede reproducir directo, sin abrir Drive.
+function driveDirectAudioUrl(url) {
+  if (!url) return '';
+  const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  return m ? `https://drive.google.com/uc?export=download&id=${m[1]}` : '';
+}
+
+function songAudioPlayableUrl(song) {
+  const a = song && song.audio;
+  if (!a) return '';
+  if (a.source === 'upload' && a.upload && a.upload.url) return a.upload.url;
+  if (a.source === 'drive' && a.driveUrl) return driveDirectAudioUrl(a.driveUrl);
+  return '';
+}
+
+function deleteBlobBestEffort(url) {
+  fetch('/api/audio/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  }).catch(() => {});
+}
+
+// ══════════════════════════════════════════════════════
 // CANCIONES — CRUD COMPLETO
 // ══════════════════════════════════════════════════════
 function renderSongs() {
@@ -469,6 +507,7 @@ function renderSongs() {
         ${(s.tags||[]).map(t=>`<span class="tag tag-muted">${esc(t)}</span>`).join('')}
       </div>
       <p class="song-excerpt text-muted text-sm">${esc(s.notes||(s.lyrics||'').slice(0,120))}</p>
+      ${songAudioPlayableUrl(s)?`<div class="song-audio-wrap" onclick="event.stopPropagation()"><audio class="audio-player" controls preload="none" src="${esc(songAudioPlayableUrl(s))}"></audio></div>`:''}
       <div class="card-actions" onclick="event.stopPropagation()">
         <button class="ca-btn" onclick="moveSong(${s.id},-1)" title="Subir">↑</button>
         <button class="ca-btn" onclick="moveSong(${s.id},1)"  title="Bajar">↓</button>
@@ -494,6 +533,18 @@ function openSongDetail(id) {
     'nueva':         '<span class="tag tag-cyan">Nueva</span>',
   }[s.status]||'';
   const links=(s.links||[]).map(l=>`<a href="${esc(l.url)}" target="_blank" class="song-link-btn">${esc(l.label)} ↗</a>`).join('');
+  const audioSrc = songAudioPlayableUrl(s);
+  let audioBlock;
+  if (audioSrc) {
+    const meta = (s.audio.source==='upload' && s.audio.upload)
+      ? `<div class="text-xs text-muted" style="margin-top:6px">📁 ${esc(s.audio.upload.name||'archivo')}${s.audio.upload.size?' · '+formatBytes(s.audio.upload.size):''}</div>`
+      : `<div class="text-xs text-muted" style="margin-top:6px">🔗 Reproduciendo desde Google Drive</div>`;
+    audioBlock = `<audio class="audio-player" controls preload="none" src="${esc(audioSrc)}"></audio>${meta}`;
+  } else if (s.audio && s.audio.source==='drive' && s.audio.driveUrl) {
+    audioBlock = `<p class="text-sm text-muted">⚠️ Este enlace de Drive no es un archivo reproducible directamente (¿es una carpeta?). <a href="${esc(s.audio.driveUrl)}" target="_blank" style="color:var(--cyan)">Abrir en Drive ↗</a></p>`;
+  } else {
+    audioBlock = `<p class="text-sm text-muted">Sin audio asignado.</p>`;
+  }
   openModal('modal-song',`
     <div class="song-detail-meta">
       ${stTag}
@@ -502,6 +553,7 @@ function openSongDetail(id) {
       ${s.duration&&s.duration!=='—'?`<span class="tag tag-muted">⏱ ${s.duration}</span>`:''}
       ${(s.tags||[]).map(t=>`<span class="tag tag-muted">${esc(t)}</span>`).join('')}
     </div>
+    <div class="song-detail-section"><h4>Audio</h4>${audioBlock}</div>
     ${s.notes?`<div class="song-detail-section"><h4>Notas</h4><div class="notes-block">${esc(s.notes)}</div></div>`:''}
     ${s.chords?`<div class="song-detail-section"><h4>Acordes</h4><div class="chords-block">${esc(s.chords)}</div></div>`:''}
     ${s.lyrics?`<div class="song-detail-section"><h4>Letra</h4><div class="lyrics-block">${esc(s.lyrics)}</div></div>`:''}
@@ -549,6 +601,23 @@ function openSongForm(id=null) {
         <textarea class="input font-mono" id="sf-chords" rows="3" placeholder="Am  F  C  G (× 4)&#10;Verso: Am  F  C  G...">${esc(s?.chords||'')}</textarea></div>
       <div class="song-detail-section"><h4>Letra</h4>
         <textarea class="input" id="sf-lyrics" rows="10" placeholder="[Verso 1]&#10;...">${esc(s?.lyrics||'')}</textarea></div>
+      <div class="song-detail-section"><h4>Audio</h4>
+        <div class="media-tabs" id="sf-audio-tabs">
+          <div class="media-tab" data-src="drive" onclick="songAudioSwitchTab('drive')">🔗 Enlace de Drive</div>
+          <div class="media-tab" data-src="upload" onclick="songAudioSwitchTab('upload')">⬆️ Subir archivo</div>
+        </div>
+        <input type="hidden" id="sf-audio-state" value="">
+        <div id="sf-audio-drive-panel">
+          <input class="input" id="sf-audio-driveurl" placeholder="https://drive.google.com/file/d/..." value="${esc(s?.audio?.driveUrl||'')}">
+          <p class="text-xs text-muted" style="margin-top:6px">Pega el enlace para compartir de un archivo de audio de Google Drive (no de una carpeta), con acceso "Cualquiera con el enlace".</p>
+        </div>
+        <div id="sf-audio-upload-panel" style="display:none">
+          <div id="sf-audio-current"></div>
+          <input type="file" id="sf-audio-file" accept="audio/*" class="input" style="padding:6px" onchange="handleSongAudioFileChange(this)">
+          <div id="sf-audio-progress" style="display:none"><div class="audio-progress-bar"></div></div>
+          <p class="text-xs text-muted" style="margin-top:6px">Formatos: MP3, WAV, M4A, AAC, OGG, FLAC. Tamaño máximo 150&nbsp;MB.</p>
+        </div>
+      </div>
       <div class="song-detail-section"><h4>Archivos y enlaces (Google Drive)</h4>
         <div id="sf-links-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
         <button class="btn btn-outline btn-sm" onclick="addSongLink()">+ Agregar enlace</button>
@@ -559,8 +628,14 @@ function openSongForm(id=null) {
       </div>
     </div>
   `, isEdit?`✏️ Editar: ${esc(s?.title||'')}`: '+ Nueva canción');
-  // Populate existing links after modal renders
-  setTimeout(()=>(s?.links||[]).forEach(l=>addSongLink(l.label,l.url)),50);
+  // Populate existing links + estado de audio despues de renderizar el modal
+  setTimeout(()=>{
+    (s?.links||[]).forEach(l=>addSongLink(l.label,l.url));
+    const initAudio = s?.audio || { source:'none', driveUrl:'', upload:null };
+    document.getElementById('sf-audio-state').value = JSON.stringify({ upload: initAudio.upload||null });
+    songAudioSwitchTab(initAudio.source==='upload' ? 'upload' : 'drive');
+    renderSongAudioCurrent();
+  },50);
 }
 
 function addSongLink(label='', url='') {
@@ -581,6 +656,76 @@ function getSongLinks() {
   })).filter(l=>l.label||l.url);
 }
 
+// ── Formulario de canción — sección Audio ──────────────
+// El link de Drive y el archivo subido se conservan ambos al alternar de
+// pestaña (nada se borra hasta que el usuario lo quita explícitamente o
+// guarda la canción); solo cambia cuál de los dos queda "activo".
+function songAudioGetState() {
+  try { return JSON.parse(document.getElementById('sf-audio-state')?.value||'{}'); }
+  catch { return {}; }
+}
+function songAudioSetState(patch) {
+  const el=document.getElementById('sf-audio-state'); if(!el) return {};
+  const next=Object.assign({},songAudioGetState(),patch);
+  el.value=JSON.stringify(next);
+  return next;
+}
+function songAudioSwitchTab(src) {
+  document.querySelectorAll('#sf-audio-tabs .media-tab').forEach(t=>t.classList.toggle('active',t.dataset.src===src));
+  const drivePanel=document.getElementById('sf-audio-drive-panel');
+  const uploadPanel=document.getElementById('sf-audio-upload-panel');
+  if(drivePanel)  drivePanel.style.display  = src==='drive'  ? '' : 'none';
+  if(uploadPanel) uploadPanel.style.display = src==='upload' ? '' : 'none';
+  songAudioSetState({ source: src });
+}
+function renderSongAudioCurrent() {
+  const box=document.getElementById('sf-audio-current'); if(!box) return;
+  const up=songAudioGetState().upload;
+  if(!up){ box.innerHTML=''; return; }
+  box.innerHTML=`
+    <div class="audio-file-info">
+      <span class="tag tag-cyan">📁 ${esc(up.name||'archivo')}</span>
+      ${up.size?`<span class="tag tag-muted">${formatBytes(up.size)}</span>`:''}
+      <button type="button" class="btn btn-outline btn-sm" onclick="removeSongAudioUpload()">🗑 Quitar archivo</button>
+    </div>
+    <audio class="audio-player" controls preload="none" src="${esc(up.url)}"></audio>`;
+}
+async function handleSongAudioFileChange(input) {
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const progressWrap=document.getElementById('sf-audio-progress');
+  const progressBar=progressWrap?progressWrap.querySelector('.audio-progress-bar'):null;
+  if(progressWrap) progressWrap.style.display='';
+  if(progressBar) progressBar.style.width='0%';
+  try {
+    const { upload } = await import(BLOB_UPLOAD_CLIENT_URL);
+    const prevUpload = songAudioGetState().upload;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const blob = await upload(`songs/${Date.now()}-${safeName}`, file, {
+      access: 'public',
+      handleUploadUrl: '/api/audio/upload-token',
+      contentType: file.type || 'application/octet-stream',
+      onUploadProgress: p => { if(progressBar) progressBar.style.width = p.percentage+'%'; },
+    });
+    songAudioSetState({ upload: { url: blob.url, pathname: blob.pathname, name: file.name, size: file.size, type: file.type||blob.contentType||'' } });
+    renderSongAudioCurrent();
+    showToast('✓ Archivo subido');
+    if(prevUpload && prevUpload.url && prevUpload.url!==blob.url) deleteBlobBestEffort(prevUpload.url);
+  } catch (err) {
+    showToast('Error al subir archivo: '+(err&&err.message?err.message:'desconocido'), 'error');
+  } finally {
+    if(progressWrap) progressWrap.style.display='none';
+    input.value='';
+  }
+}
+function removeSongAudioUpload() {
+  if(!confirm('¿Quitar el archivo de audio subido? Se eliminará del almacenamiento.')) return;
+  const st=songAudioGetState();
+  if(st.upload && st.upload.url) deleteBlobBestEffort(st.upload.url);
+  songAudioSetState({ upload: null });
+  renderSongAudioCurrent();
+}
+
 function saveSongForm(existingId) {
   const title=document.getElementById('sf-title')?.value.trim();
   if(!title){showToast('El título es obligatorio','error');return;}
@@ -597,6 +742,7 @@ function saveSongForm(existingId) {
     chords:   document.getElementById('sf-chords')?.value||'',
     lyrics:   document.getElementById('sf-lyrics')?.value||'',
     links:    getSongLinks(),
+    audio:    buildSongAudioField(),
   };
   if(isNew) App.songs.push(song);
   else { const idx=App.songs.findIndex(s=>s.id===song.id); if(idx!==-1) App.songs[idx]=song; }
@@ -605,8 +751,24 @@ function saveSongForm(existingId) {
   showToast(isNew?'✓ Canción creada':'✓ Canción actualizada');
 }
 
+// Decide la fuente activa a partir del estado del formulario: si la pestaña
+// activa es "upload" pero no hay archivo subido, cae a "drive"; si tampoco
+// hay link de Drive, queda en "none". Ambos valores (driveUrl y upload) se
+// guardan siempre, aunque no sean la fuente activa, para no perder datos.
+function buildSongAudioField() {
+  const st = songAudioGetState();
+  const driveUrl = document.getElementById('sf-audio-driveurl')?.value.trim()||'';
+  const upload = st.upload||null;
+  let source = st.source==='upload' ? 'upload' : 'drive';
+  if(source==='upload' && !(upload && upload.url)) source = driveUrl ? 'drive' : 'none';
+  if(source==='drive' && !driveUrl) source = 'none';
+  return { source, driveUrl, upload };
+}
+
 function deleteSong(id) {
   if(!confirm('¿Eliminar esta canción? No se puede deshacer.'))return;
+  const song=App.songs.find(s=>s.id===id);
+  if(song && song.audio && song.audio.upload && song.audio.upload.url) deleteBlobBestEffort(song.audio.upload.url);
   App.songs=App.songs.filter(s=>s.id!==id);
   saveAll(); closeModal('modal-song'); renderSongs(); renderDashboard();
   showToast('✓ Canción eliminada');
@@ -1039,6 +1201,9 @@ window.addSongLink = addSongLink;
 window.saveSongForm = saveSongForm;
 window.deleteSong = deleteSong;
 window.moveSong = moveSong;
+window.songAudioSwitchTab = songAudioSwitchTab;
+window.handleSongAudioFileChange = handleSongAudioFileChange;
+window.removeSongAudioUpload = removeSongAudioUpload;
 window.openMediaForm = openMediaForm;
 window.saveMediaForm = saveMediaForm;
 window.deleteMediaItem = deleteMediaItem;

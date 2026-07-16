@@ -55,6 +55,26 @@ Ejemplo:
   driveUrl: 'https://drive.google.com/drive/folders/TU_ID_REAL'
 
 
+═══ AUDIO DE CANCIONES ═══════════════════════════════════
+
+Cada canción puede tener un audio reproducible directo desde la
+tarjeta y el detalle (sin abrir Google Drive). Se configura desde
+la propia app — no hace falta tocar js/data.js:
+
+  1. Entra a Canciones → editar la canción → sección "Audio".
+  2. Elige una de las dos opciones (puedes cambiar entre ellas
+     sin perder lo que ya tenías configurado):
+       🔗 Enlace de Drive → pega el link para compartir de un
+          archivo de audio (no una carpeta), con acceso
+          "Cualquiera con el enlace".
+       ⬆️ Subir archivo → sube el MP3/WAV/etc. directamente;
+          se guarda en Vercel Blob, no en tu navegador.
+  3. Guardar. El reproductor aparece automáticamente.
+
+Esto solo funciona en el sitio desplegado en Vercel (inicia
+sesión con Google primero) — no en el index.html abierto suelto.
+
+
 ═══ EVENTOS — GESTIÓN ═══════════════════════════════════
 
 Los eventos se pueden agregar, editar y eliminar directamente
