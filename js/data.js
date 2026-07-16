@@ -162,5 +162,5 @@ window.DEFAULT_SETTINGS = {
   tagline:      'Ska · Punk · Costa Rica',
   genre:        'Ska-Punk / Costa Rica',
   bio:          'Mala Fama es una banda de ska-punk originaria de Frailes de Desamparados, Costa Rica, formada en 2022 y consolidada con su alineación actual en 2023. Es una propuesta liderada por una voz femenina, con canciones que fusionan la energía del ska-punk con matices de reggae roots. Su debut oficial en tarima fue el 9 de agosto de 2025, en Frailes. Sus letras hablan de desamor, luchas contra la depresión y esos momentos de chivo que todos hemos vivido: cervezas, amigos y música — letras sencillas y directas, pensadas para conectar con experiencias comunes.',
-  driveRootUrl: '',
+  driveRootUrl: 'https://drive.google.com/drive/folders/1D2fbKO_snnfnpa1aW1usP0eWDx34tG78?usp=drive_link',
 };
