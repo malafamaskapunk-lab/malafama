@@ -70,6 +70,13 @@
       var el = document.getElementById('err');
       el.textContent = msgs[err] || 'No se pudo iniciar sesión. Intenta de nuevo.';
       el.style.display = 'block';
+      var detail = params.get('detail');
+      if (detail) {
+        var d = document.createElement('div');
+        d.style.cssText = 'margin-top:10px;font-size:10px;color:#666;text-align:left;word-break:break-all;background:#0a0a12;padding:8px;border-radius:6px';
+        d.textContent = detail;
+        el.parentNode.insertBefore(d, el.nextSibling);
+      }
     }
   </script>
 </body>

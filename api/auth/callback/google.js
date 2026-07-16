@@ -8,9 +8,11 @@ function decodeJwtPayload(idToken) {
   return JSON.parse(atob(padded));
 }
 
-function failRedirect(reason) {
+function failRedirect(reason, detail) {
   const headers = new Headers();
-  headers.set('Location', `/login.html?error=${encodeURIComponent(reason)}`);
+  let loc = `/login.html?error=${encodeURIComponent(reason)}`;
+  if (detail) loc += `&detail=${encodeURIComponent(String(detail).slice(0, 300))}`;
+  headers.set('Location', loc);
   headers.append('Set-Cookie', 'mf_oauth_state=; Path=/; Max-Age=0');
   return new Response(null, { status: 302, headers });
 }
@@ -41,14 +43,17 @@ export default async function handler(request) {
     }),
   });
 
-  if (!tokenRes.ok) return failRedirect('token_exchange_failed');
+  if (!tokenRes.ok) {
+    const errBody = await tokenRes.text();
+    return failRedirect('token_exchange_failed', errBody);
+  }
   const tokens = await tokenRes.json();
 
   let idPayload;
   try {
     idPayload = decodeJwtPayload(tokens.id_token);
-  } catch {
-    return failRedirect('token_exchange_failed');
+  } catch (e) {
+    return failRedirect('token_exchange_failed', 'no id_token: ' + (e && e.message));
   }
 
   const allowedEmail = (process.env.ALLOWED_EMAIL || '').toLowerCase().trim();
