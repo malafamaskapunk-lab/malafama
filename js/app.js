@@ -175,7 +175,7 @@ function navigateTo(page) {
   if (page === 'dashboard')  renderDashboard();
   if (page === 'calendar')   renderCalendar();
   if (page === 'songs')      renderSongs();
-  if (page === 'media')      renderMedia();
+  if (page === 'media')      { renderMedia(); renderDriveExplorer(); }
   if (page === 'about')      renderAbout();
   closeMobileSidebar();
   history.replaceState(null, '', '#' + page);
@@ -612,6 +612,41 @@ function deleteSong(id) {
   showToast('✓ Canción eliminada');
 }
 function moveSong(id,dir) { App.songs=moveItem(App.songs,id,dir); saveAll(); renderSongs(); }
+
+// ══════════════════════════════════════════════════════
+// EXPLORADOR DE GOOGLE DRIVE (conectado via login)
+// ══════════════════════════════════════════════════════
+function renderDriveExplorer() {
+  var box = document.getElementById('drive-explorer');
+  if (!box) return;
+  var rootUrl = (App.settings && App.settings.driveRootUrl) || '';
+
+  fetch('/api/auth/session').then(function(r){return r.json();}).then(function(s){
+    if (!s.authenticated) {
+      box.innerHTML = '<p class="text-sm text-muted">🔒 Inicia sesión para ver tus archivos de Drive directamente aquí.</p>';
+      return;
+    }
+    if (!s.hasDrive) {
+      box.innerHTML = '<p class="text-sm text-muted">Esta sesión no autorizó acceso a Drive. <a href="/api/auth/logout" style="color:var(--cyan)">Cierra sesión</a> y vuelve a entrar para conectarlo.</p>';
+      return;
+    }
+    if (!rootUrl) {
+      box.innerHTML = '<p class="text-sm text-muted">✅ Conectado a Drive. Configura la carpeta raíz en <a href="#" onclick="openSettingsModal();return false" style="color:var(--cyan)">Ajustes</a> para verla aquí.</p>';
+      return;
+    }
+    box.innerHTML = '<p class="text-sm text-muted">Cargando archivos de Drive…</p>';
+    fetch('/api/drive/list?driveUrl=' + encodeURIComponent(rootUrl)).then(function(r){return r.json();}).then(function(data){
+      if (data.error) { box.innerHTML = '<p class="text-sm text-muted">⚠️ ' + esc(data.error) + '</p>'; return; }
+      var files = data.files || [];
+      if (!files.length) { box.innerHTML = '<p class="text-sm text-muted">La carpeta de Drive está vacía o no es accesible.</p>'; return; }
+      box.innerHTML = '<p class="text-xs text-muted" style="margin-bottom:10px">📁 Archivos en tu Drive (' + files.length + ')</p>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+        files.map(function(f){
+          return '<a href="' + esc(f.webViewLink) + '" target="_blank" class="tag tag-muted" style="text-decoration:none">' + esc(f.name) + '</a>';
+        }).join('') + '</div>';
+    }).catch(function(){ box.innerHTML = '<p class="text-sm text-muted">⚠️ No se pudo conectar con Drive.</p>'; });
+  }).catch(function(){ box.innerHTML = ''; });
+}
 
 // ══════════════════════════════════════════════════════
 // MULTIMEDIA — CRUD COMPLETO
