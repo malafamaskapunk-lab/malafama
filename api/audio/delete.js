@@ -1,47 +1,36 @@
 // Elimina un archivo de Vercel Blob (usado al reemplazar/quitar el audio
 // subido de una cancion, o al borrar la cancion completa). Best-effort desde
 // el frontend: si esto falla no bloquea la operacion en localStorage.
-// Runtime Edge: el runtime Node.js por defecto colgaba (FUNCTION_INVOCATION_TIMEOUT)
-// en este proyecto incluso antes de llegar al handler.
-export const config = { runtime: 'edge' };
-
+// Runtime Node.js clasico (req, res) — ver upload-token.js para el porque.
 import { del } from '@vercel/blob';
 import { verifySession } from '../_lib/session.js';
 
 const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i;
 
-export default async function handler(request) {
-  const jsonHeaders = { 'Content-Type': 'application/json' };
-
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Metodo no permitido' }), { status: 405, headers: jsonHeaders });
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Metodo no permitido' });
+    return;
   }
 
-  const cookieHeader = request.headers.get('cookie') || '';
+  const cookieHeader = req.headers.cookie || '';
   const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
   const session = token ? await verifySession(token, process.env.SESSION_SECRET) : null;
   if (!session) {
-    return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401, headers: jsonHeaders });
+    res.status(401).json({ error: 'No autenticado' });
+    return;
   }
 
-  let url;
-  try {
-    ({ url } = await request.json());
-  } catch {
-    return new Response(JSON.stringify({ error: 'JSON invalido' }), { status: 400, headers: jsonHeaders });
-  }
-
+  const url = req.body && req.body.url;
   if (!url || !BLOB_URL_RE.test(url)) {
-    return new Response(JSON.stringify({ error: 'URL invalida' }), { status: 400, headers: jsonHeaders });
+    res.status(400).json({ error: 'URL invalida' });
+    return;
   }
 
   try {
     await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: jsonHeaders });
+    res.status(200).json({ ok: true });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err && err.message ? err.message : 'Error al eliminar archivo' }),
-      { status: 500, headers: jsonHeaders }
-    );
+    res.status(500).json({ error: err && err.message ? err.message : 'Error al eliminar archivo' });
   }
 }

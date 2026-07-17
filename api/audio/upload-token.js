@@ -1,11 +1,11 @@
 // Emite tokens de client-upload para Vercel Blob (el navegador sube el archivo
 // directamente a Blob, sin pasar el binario por esta funcion — necesario porque
 // las Serverless Functions tienen un limite de tamano de body mucho menor al de
-// un archivo de audio). Runtime Edge: el runtime Node.js por defecto colgaba
-// (FUNCTION_INVOCATION_TIMEOUT) en este proyecto incluso antes de llegar al
-// handler; Edge es el runtime probado y funcionando para el resto de api/.
-export const config = { runtime: 'edge' };
-
+// un archivo de audio). Runtime Node.js clasico (req, res): @vercel/blob depende
+// de `undici`, que usa modulos internos de Node no soportados en Edge, y la
+// firma "Request → Response" no funcionaba en el runtime Node de este proyecto
+// (se colgaba hasta FUNCTION_INVOCATION_TIMEOUT porque nunca se cerraba la
+// respuesta). res.status().json() es la API clasica y siempre soportada.
 import { handleUpload } from '@vercel/blob/client';
 import { verifySession } from '../_lib/session.js';
 
@@ -16,26 +16,23 @@ const ALLOWED_CONTENT_TYPES = [
 ];
 const MAX_SIZE_BYTES = 150 * 1024 * 1024; // 150 MB
 
-async function getSession(request) {
-  const cookieHeader = request.headers.get('cookie') || '';
+async function getSession(req) {
+  const cookieHeader = req.headers.cookie || '';
   const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
   return token ? verifySession(token, process.env.SESSION_SECRET) : null;
 }
 
-export default async function handler(request) {
-  const jsonHeaders = { 'Content-Type': 'application/json' };
-
-  const session = await getSession(request);
+export default async function handler(req, res) {
+  const session = await getSession(req);
   if (!session) {
-    return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401, headers: jsonHeaders });
+    res.status(401).json({ error: 'No autenticado' });
+    return;
   }
-
-  const body = await request.json();
 
   try {
     const jsonResponse = await handleUpload({
-      body,
-      request,
+      body: req.body,
+      request: req,
       token: process.env.BLOB_READ_WRITE_TOKEN,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ALLOWED_CONTENT_TYPES,
@@ -48,11 +45,8 @@ export default async function handler(request) {
         // blob directamente del resultado de upload() y la guarda en localStorage.
       },
     });
-    return new Response(JSON.stringify(jsonResponse), { status: 200, headers: jsonHeaders });
+    res.status(200).json(jsonResponse);
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err && err.message ? err.message : 'Error al generar token de subida' }),
-      { status: 400, headers: jsonHeaders }
-    );
+    res.status(400).json({ error: err && err.message ? err.message : 'Error al generar token de subida' });
   }
 }
