@@ -84,7 +84,9 @@ window.EVENTS = [
 function getRelativeDate(daysFromNow) {
   const d = new Date();
   d.setDate(d.getDate() + daysFromNow);
-  return d.toISOString().split('T')[0];
+  // Dia calendario LOCAL, no UTC (d.toISOString() corre el dia en zonas al
+  // este de UTC) — mismo motivo que localDateStr() en app.js.
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 // ─── CANCIONES ──────────────────────────────────────

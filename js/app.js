@@ -35,6 +35,16 @@ function moveItem(arr, id, dir) {
   [copy[idx], copy[to]] = [copy[to], copy[idx]];
   return copy;
 }
+// "YYYY-MM-DD" en el dia calendario LOCAL de d, no en UTC. d.toISOString()
+// convierte a UTC primero, lo que corre el dia en zonas horarias al este de
+// UTC (o cerca de medianoche en cualquier zona) — un evento guardado como
+// fecha literal (ej. del <input type="date">) puede terminar sin coincidir
+// con ninguna celda del calendario aunque si aparezca en listas por rango
+// como el Dashboard. Usar esto para cualquier fecha que se compare contra
+// event.date, nunca toISOString().split('T')[0].
+function localDateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 
 // ── Persistencia ──────────────────────────────────────
 function loadAllData() {
@@ -308,7 +318,7 @@ function closeModal(id) {
 function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
 function renderDashboard() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr(new Date());
   set('stat-songs',      App.songs.filter(s => s.status==='activa').length);
   set('stat-events',     App.events.filter(e => e.date >= today).length);
   set('stat-concerts',   App.events.filter(e => e.type==='concert' && e.date>=today).length);
@@ -362,7 +372,7 @@ function getWeekStart(d) {
 function renderMonthView(container) {
   const year=App.calDate.getFullYear(), month=App.calDate.getMonth();
   const first=new Date(year,month,1), last=new Date(year,month+1,0);
-  const today=new Date().toISOString().split('T')[0];
+  const today=localDateStr(new Date());
   let dow=first.getDay(); if(dow===0) dow=7; dow--;
   const cells=[];
   for(let i=0;i<dow;i++) cells.push({date:new Date(year,month,1-dow+i),other:true});
@@ -373,7 +383,7 @@ function renderMonthView(container) {
   container.innerHTML=`<div class="cal-month">
     <div class="cal-month-header">${dows.map(d=>`<span>${d}</span>`).join('')}</div>
     <div class="cal-month-grid">${cells.map(cell=>{
-      const ds=cell.date.toISOString().split('T')[0], isToday=ds===today;
+      const ds=localDateStr(cell.date), isToday=ds===today;
       const ev=App.events.filter(e=>e.date===ds);
       const num=isToday?`<div class="cal-day-num"><span>${cell.date.getDate()}</span></div>`:`<div class="cal-day-num">${cell.date.getDate()}</div>`;
       const chips=ev.slice(0,3).map(e=>`<div class="cal-event-chip chip-${e.type}" onclick="openEventDetail(${e.id});event.stopPropagation();" title="${esc(e.title)}">${esc(e.title)}</div>`).join('');
@@ -382,13 +392,13 @@ function renderMonthView(container) {
     }).join('')}</div></div>`;
 }
 function renderWeekView(container) {
-  const mon=getWeekStart(App.calDate), today=new Date().toISOString().split('T')[0];
+  const mon=getWeekStart(App.calDate), today=localDateStr(new Date());
   const days=[]; for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d);}
   const dw=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const hours=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
   container.innerHTML=`<div class="cal-week" style="overflow-x:auto">
     <div class="cal-week-header"><div></div>${days.map((d,i)=>{
-      const ds=d.toISOString().split('T')[0];
+      const ds=localDateStr(d);
       return `<div class="cal-week-header-cell${ds===today?' today-col':''}">
         <div style="font-weight:700;color:${ds===today?'var(--cyan)':'var(--text-hi)'}">${d.getDate()}</div>
         <div>${dw[i]}</div></div>`;
@@ -396,13 +406,13 @@ function renderWeekView(container) {
     <div class="cal-week-body">${hours.map(h=>`<div class="cal-week-row">
       <div class="cal-week-time">${h}:00</div>
       ${days.map(d=>{
-        const ds=d.toISOString().split('T')[0];
+        const ds=localDateStr(d);
         const ev=App.events.filter(e=>e.date===ds&&parseInt((e.time||'0:00').split(':')[0])===h);
         return `<div class="cal-week-cell${ds===today?' today-col':''}">${ev.map(e=>`<div class="cal-event-chip chip-${e.type}" onclick="openEventDetail(${e.id})">${e.time} ${esc(e.title)}</div>`).join('')}</div>`;
       }).join('')}</div>`).join('')}</div></div>`;
 }
 function renderDayView(container) {
-  const ds=App.calDate.toISOString().split('T')[0], today=new Date().toISOString().split('T')[0];
+  const ds=localDateStr(App.calDate), today=localDateStr(new Date());
   const ev=App.events.filter(e=>e.date===ds).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   const typeIco = t => ({concert:'🎸',rehearsal:'🥁',recording:'🎙️',meeting:'💬'}[t]||'📌');
   container.innerHTML=`<div style="max-width:600px">
