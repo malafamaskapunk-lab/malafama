@@ -51,21 +51,39 @@ function tryParse(key, fallback) {
     return s ? JSON.parse(s) : (Array.isArray(fallback) ? [...fallback] : {...fallback});
   } catch { return Array.isArray(fallback) ? [...fallback] : {...fallback}; }
 }
-function saveAll() {
+function saveLocal() {
   localStorage.setItem('malaifama_settings', JSON.stringify(App.settings));
   localStorage.setItem('malaifama_events',   JSON.stringify(App.events));
   localStorage.setItem('malaifama_songs',    JSON.stringify(App.songs));
   localStorage.setItem('malaifama_members',  JSON.stringify(App.members));
   localStorage.setItem('malaifama_media',    JSON.stringify(App.media));
 }
+function saveAll() {
+  saveLocal();
+  pushToDrive();
+}
 
-// ── Export / Import ───────────────────────────────────
-function exportData() {
-  const payload = {
+// ── Export / Import / Sync con Google Drive ────────────
+// buildBackupPayload/applyBackupPayload son compartidos por el backup manual
+// (exportData/importData) y la sincronizacion automatica con Drive
+// (pushToDrive/syncFromDrive) — mismo formato para ambos.
+function buildBackupPayload() {
+  return {
     version: '2.0', exportDate: new Date().toISOString(),
     settings: App.settings, events: App.events,
     songs: App.songs, members: App.members, media: App.media,
   };
+}
+function applyBackupPayload(d) {
+  if (d.settings) App.settings = d.settings;
+  if (d.events)   App.events   = d.events;
+  if (d.songs)    App.songs    = d.songs;
+  if (d.members)  App.members  = d.members;
+  if (d.media)    App.media    = d.media;
+}
+
+function exportData() {
+  const payload = buildBackupPayload();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -80,20 +98,73 @@ function importData(input) {
   reader.onload = ev => {
     try {
       const d = JSON.parse(ev.target.result);
-      if (d.settings) App.settings = d.settings;
-      if (d.events)   App.events   = d.events;
-      if (d.songs)    App.songs    = d.songs;
-      if (d.members)  App.members  = d.members;
-      if (d.media)    App.media    = d.media;
+      applyBackupPayload(d);
       saveAll(); applySettings(); navigateTo(App.currentPage);
       closeModal('modal-export'); showToast('✓ Datos importados');
     } catch { showToast('Error al leer el archivo', 'error'); }
   };
   reader.readAsText(file); input.value = '';
 }
-function resetToDefaults() {
+async function resetToDefaults() {
   if (!confirm('¿Restablecer todos los datos a los valores por defecto? Esta acción no se puede deshacer.')) return;
+  await deleteDriveState(); // best-effort, nunca lanza — si no, el sync al recargar "revive" los datos viejos
   localStorage.clear(); location.reload();
+}
+
+// ── Sincronizacion con Google Drive (appDataFolder) ────
+// Reutiliza el login/token de Drive ya existentes para guardar el mismo JSON
+// de buildBackupPayload() en un archivo oculto del Drive del usuario, para
+// que otros dispositivos con la misma sesion vean los mismos datos. Todo es
+// best-effort: si no hay sesion, no hay scope de Drive, o falla la red, la
+// app sigue funcionando solo con localStorage exactamente como antes.
+function fetchWithTimeout(url, opts = {}, ms = 8000) {
+  return fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+}
+
+async function getAuthSession() {
+  try {
+    const res = await fetchWithTimeout('/api/auth/session');
+    if (!res.ok) return { authenticated: false };
+    return await res.json();
+  } catch {
+    return { authenticated: false };
+  }
+}
+
+let pushInFlight = false, pushQueued = false;
+async function pushToDrive() {
+  if (pushInFlight) { pushQueued = true; return; }
+  pushInFlight = true;
+  do {
+    pushQueued = false;
+    try {
+      await fetchWithTimeout('/api/drive/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildBackupPayload()),
+      });
+    } catch { /* best-effort: localStorage ya tiene los datos */ }
+  } while (pushQueued);
+  pushInFlight = false;
+}
+
+// Devuelve true si trajo datos nuevos de Drive y los aplico.
+async function syncFromDrive() {
+  try {
+    const res = await fetchWithTimeout('/api/drive/state');
+    if (!res.ok) return false; // sin sesion, sin scope de Drive, etc. — silencioso
+    const data = await res.json();
+    if (!data.exists) return false;
+    applyBackupPayload(data.state);
+    saveLocal(); // no pushToDrive(): acabamos de leerlo de ahi mismo
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function deleteDriveState() {
+  return fetchWithTimeout('/api/drive/state', { method: 'DELETE' }, 5000).catch(() => {});
 }
 function openExportModal() {
   openModal('modal-export', `
@@ -129,6 +200,7 @@ function openSettingsModal() {
   const s = App.settings;
   openModal('modal-settings', `
     <div class="event-form">
+      <div id="settings-sync-status" class="text-sm text-muted" style="margin-bottom:-4px"></div>
       <div class="form-group form-row single"><label class="form-label">Nombre de la banda</label>
         <input class="input" id="st-name" value="${esc(s.bandName||'Mala Fama')}"></div>
       <div class="form-group form-row single"><label class="form-label">Eslogan (sidebar)</label>
@@ -145,6 +217,15 @@ function openSettingsModal() {
       </div>
     </div>
   `, '⚙️ Ajustes de banda');
+  renderSyncStatus();
+}
+async function renderSyncStatus() {
+  const box = document.getElementById('settings-sync-status'); if (!box) return;
+  const s = await getAuthSession();
+  if (!s.authenticated) { box.innerHTML = ''; return; }
+  box.innerHTML = s.hasAppData
+    ? '<p>🔄 Sincronizado con Google Drive entre tus dispositivos.</p>'
+    : '<p>⚠️ Para sincronizar entre dispositivos, <a href="/api/auth/logout" style="color:var(--cyan)">cierra sesión y vuelve a entrar</a>.</p>';
 }
 function saveSettings() {
   App.settings = {
@@ -783,7 +864,7 @@ function renderDriveExplorer() {
   if (!box) return;
   var rootUrl = (App.settings && App.settings.driveRootUrl) || '';
 
-  fetch('/api/auth/session').then(function(r){return r.json();}).then(function(s){
+  getAuthSession().then(function(s){
     if (!s.authenticated) {
       box.innerHTML = '<p class="text-sm text-muted">🔒 Inicia sesión para ver tus archivos de Drive directamente aquí.</p>';
       return;
@@ -1097,7 +1178,7 @@ function runSearch() {
 }
 
 // ── INIT ──────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   loadAllData();
   applySettings();
 
@@ -1180,6 +1261,16 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
   });
+
+  // Sincroniza con Google Drive (si hay sesion con acceso) antes del primer
+  // render, para no pintar datos locales viejos y luego "saltar" a los de Drive.
+  var syncIndicator = document.createElement('div');
+  syncIndicator.className = 'toast success';
+  syncIndicator.innerHTML = '<span>🔄</span> Sincronizando...';
+  document.body.appendChild(syncIndicator);
+  var synced = await syncFromDrive();
+  syncIndicator.remove();
+  if (synced) applySettings();
 
   // Initial page
   var hash = window.location.hash.replace('#','') || 'dashboard';

@@ -75,6 +75,22 @@ Esto solo funciona en el sitio desplegado en Vercel (inicia
 sesión con Google primero) — no en el index.html abierto suelto.
 
 
+═══ SINCRONIZACIÓN ENTRE DISPOSITIVOS ══════════════════
+
+Con la sesión de Google iniciada, TODOS los datos (canciones,
+eventos, integrantes, media, ajustes) se guardan también en
+un archivo oculto de tu Google Drive — así ves lo mismo en el
+celular y en la compu, sin hacer nada extra.
+
+Si en Ajustes ves el mensaje "Cierra sesión y vuelve a entrar
+para sincronizar", es porque tu sesión es de antes de este
+cambio — cerrá sesión y volvé a entrar una sola vez.
+
+Sin sesión de Google (o abriendo index.html suelto), la app
+sigue funcionando igual que siempre, solo que cada navegador
+guarda sus propios datos por separado.
+
+
 ═══ EVENTOS — GESTIÓN ═══════════════════════════════════
 
 Los eventos se pueden agregar, editar y eliminar directamente

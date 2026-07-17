@@ -1,21 +1,6 @@
-import { verifySession, signSession } from '../_lib/session.js';
+import { requireDriveSession, withSessionCookie, DriveAuthError } from '../_lib/googleDrive.js';
 
 export const config = { runtime: 'edge' };
-
-async function refreshAccessToken(refreshToken) {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  });
-  if (!res.ok) return null;
-  return res.json();
-}
 
 function extractFolderId(driveUrl) {
   if (!driveUrl) return null;
@@ -25,33 +10,18 @@ function extractFolderId(driveUrl) {
 
 export default async function handler(request) {
   const jsonHeaders = { 'Content-Type': 'application/json' };
-  const cookieHeader = request.headers.get('cookie') || '';
-  const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
-  let session = token ? await verifySession(token, process.env.SESSION_SECRET) : null;
 
-  if (!session) {
-    return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401, headers: jsonHeaders });
-  }
-  if (!session.refresh_token) {
-    return new Response(
-      JSON.stringify({ error: 'Esta sesion no tiene acceso a Drive. Cierra sesion y vuelve a entrar para autorizarlo.' }),
-      { status: 403, headers: jsonHeaders }
-    );
-  }
-
-  const headers = new Headers(jsonHeaders);
-  let accessToken = session.access_token;
-
-  if (Date.now() > session.token_expiry - 60000) {
-    const refreshed = await refreshAccessToken(session.refresh_token);
-    if (!refreshed) {
-      return new Response(JSON.stringify({ error: 'No se pudo renovar el acceso a Drive' }), { status: 401, headers: jsonHeaders });
+  let accessToken, newSignedCookie;
+  try {
+    ({ accessToken, newSignedCookie } = await requireDriveSession(request));
+  } catch (err) {
+    if (err instanceof DriveAuthError) {
+      return new Response(JSON.stringify(err.body), { status: err.status, headers: jsonHeaders });
     }
-    accessToken = refreshed.access_token;
-    session = { ...session, access_token: accessToken, token_expiry: Date.now() + refreshed.expires_in * 1000 };
-    const newSigned = await signSession(session, process.env.SESSION_SECRET);
-    headers.append('Set-Cookie', `mf_session=${newSigned}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${30 * 24 * 60 * 60}`);
+    throw err;
   }
+
+  const headers = withSessionCookie(new Headers(jsonHeaders), newSignedCookie);
 
   const url = new URL(request.url);
   const rawFolder = url.searchParams.get('folderId') || url.searchParams.get('driveUrl');

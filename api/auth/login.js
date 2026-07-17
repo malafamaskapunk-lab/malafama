@@ -15,7 +15,7 @@ export default async function handler(request) {
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'openid email https://www.googleapis.com/auth/drive.readonly',
+    scope: 'openid email https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.appdata',
     access_type: 'offline',
     prompt: 'consent',
     state,

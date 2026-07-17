@@ -73,6 +73,9 @@ export default async function handler(request) {
     email: idPayload.email,
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token || null,
+    // Scope realmente otorgado por Google (puede diferir del pedido si el
+    // usuario deniega algo) — usado por hasAppData en api/auth/session.js.
+    scope: tokens.scope || '',
     token_expiry: now + tokens.expires_in * 1000,
     exp: now + 30 * 24 * 60 * 60 * 1000,
   };
