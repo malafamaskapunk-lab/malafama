@@ -1,8 +1,11 @@
 // Emite tokens de client-upload para Vercel Blob (el navegador sube el archivo
 // directamente a Blob, sin pasar el binario por esta funcion — necesario porque
 // las Serverless Functions tienen un limite de tamano de body mucho menor al de
-// un archivo de audio). Runtime Node.js por defecto (sin `config.runtime`),
-// que es lo que requiere @vercel/blob/client → handleUpload.
+// un archivo de audio). Runtime Edge: el runtime Node.js por defecto colgaba
+// (FUNCTION_INVOCATION_TIMEOUT) en este proyecto incluso antes de llegar al
+// handler; Edge es el runtime probado y funcionando para el resto de api/.
+export const config = { runtime: 'edge' };
+
 import { handleUpload } from '@vercel/blob/client';
 import { verifySession } from '../_lib/session.js';
 
@@ -13,17 +16,8 @@ const ALLOWED_CONTENT_TYPES = [
 ];
 const MAX_SIZE_BYTES = 150 * 1024 * 1024; // 150 MB
 
-// El runtime Node.js por defecto de Vercel (a diferencia de Edge, usado en
-// middleware.js y api/drive/list.js) no entrega un Request estandar — headers
-// puede ser un objeto plano sin `.get()`. Soporta ambas formas.
-function getCookieHeader(request) {
-  const h = request.headers;
-  if (h && typeof h.get === 'function') return h.get('cookie') || '';
-  return (h && (h.cookie || h['cookie'])) || '';
-}
-
 async function getSession(request) {
-  const cookieHeader = getCookieHeader(request);
+  const cookieHeader = request.headers.get('cookie') || '';
   const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
   return token ? verifySession(token, process.env.SESSION_SECRET) : null;
 }
@@ -42,6 +36,7 @@ export default async function handler(request) {
     const jsonResponse = await handleUpload({
       body,
       request,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ALLOWED_CONTENT_TYPES,
         addRandomSuffix: true,

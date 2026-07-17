@@ -1,19 +1,14 @@
 // Elimina un archivo de Vercel Blob (usado al reemplazar/quitar el audio
 // subido de una cancion, o al borrar la cancion completa). Best-effort desde
 // el frontend: si esto falla no bloquea la operacion en localStorage.
+// Runtime Edge: el runtime Node.js por defecto colgaba (FUNCTION_INVOCATION_TIMEOUT)
+// en este proyecto incluso antes de llegar al handler.
+export const config = { runtime: 'edge' };
+
 import { del } from '@vercel/blob';
 import { verifySession } from '../_lib/session.js';
 
 const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i;
-
-// El runtime Node.js por defecto de Vercel (a diferencia de Edge, usado en
-// middleware.js y api/drive/list.js) no entrega un Request estandar — headers
-// puede ser un objeto plano sin `.get()`. Soporta ambas formas.
-function getCookieHeader(request) {
-  const h = request.headers;
-  if (h && typeof h.get === 'function') return h.get('cookie') || '';
-  return (h && (h.cookie || h['cookie'])) || '';
-}
 
 export default async function handler(request) {
   const jsonHeaders = { 'Content-Type': 'application/json' };
@@ -22,7 +17,7 @@ export default async function handler(request) {
     return new Response(JSON.stringify({ error: 'Metodo no permitido' }), { status: 405, headers: jsonHeaders });
   }
 
-  const cookieHeader = getCookieHeader(request);
+  const cookieHeader = request.headers.get('cookie') || '';
   const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
   const session = token ? await verifySession(token, process.env.SESSION_SECRET) : null;
   if (!session) {
@@ -41,7 +36,7 @@ export default async function handler(request) {
   }
 
   try {
-    await del(url);
+    await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: jsonHeaders });
   } catch (err) {
     return new Response(
