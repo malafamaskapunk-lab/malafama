@@ -6,6 +6,15 @@ import { verifySession } from '../_lib/session.js';
 
 const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i;
 
+// El runtime Node.js por defecto de Vercel (a diferencia de Edge, usado en
+// middleware.js y api/drive/list.js) no entrega un Request estandar — headers
+// puede ser un objeto plano sin `.get()`. Soporta ambas formas.
+function getCookieHeader(request) {
+  const h = request.headers;
+  if (h && typeof h.get === 'function') return h.get('cookie') || '';
+  return (h && (h.cookie || h['cookie'])) || '';
+}
+
 export default async function handler(request) {
   const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -13,7 +22,7 @@ export default async function handler(request) {
     return new Response(JSON.stringify({ error: 'Metodo no permitido' }), { status: 405, headers: jsonHeaders });
   }
 
-  const cookieHeader = request.headers.get('cookie') || '';
+  const cookieHeader = getCookieHeader(request);
   const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
   const session = token ? await verifySession(token, process.env.SESSION_SECRET) : null;
   if (!session) {

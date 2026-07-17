@@ -13,8 +13,17 @@ const ALLOWED_CONTENT_TYPES = [
 ];
 const MAX_SIZE_BYTES = 150 * 1024 * 1024; // 150 MB
 
+// El runtime Node.js por defecto de Vercel (a diferencia de Edge, usado en
+// middleware.js y api/drive/list.js) no entrega un Request estandar — headers
+// puede ser un objeto plano sin `.get()`. Soporta ambas formas.
+function getCookieHeader(request) {
+  const h = request.headers;
+  if (h && typeof h.get === 'function') return h.get('cookie') || '';
+  return (h && (h.cookie || h['cookie'])) || '';
+}
+
 async function getSession(request) {
-  const cookieHeader = request.headers.get('cookie') || '';
+  const cookieHeader = getCookieHeader(request);
   const token = cookieHeader.match(/mf_session=([^;]+)/)?.[1];
   return token ? verifySession(token, process.env.SESSION_SECRET) : null;
 }
