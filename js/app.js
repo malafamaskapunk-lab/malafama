@@ -142,6 +142,12 @@ async function pushToDrive() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildBackupPayload()),
+        // keepalive: el navegador puede cancelar un fetch normal si la
+        // pestaña se navega/cierra/pasa a segundo plano justo despues de
+        // guardar (ej. crear un evento y de inmediato revisar otro
+        // dispositivo) — keepalive deja que el request siga aunque la
+        // pagina se descargue, en vez de perder ese guardado en silencio.
+        keepalive: true,
       });
     } catch { /* best-effort: localStorage ya tiene los datos */ }
   } while (pushQueued);
